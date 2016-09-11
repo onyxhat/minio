@@ -16,8 +16,50 @@
 
 package main
 
-import minio "github.com/minio/minio/cmd"
+import (
+	log "github.com/Sirupsen/logrus"
+	"github.com/kardianos/service"
+	minio "github.com/minio/minio/cmd"
+)
+
+type program struct{}
+
+//Runtime
+func (p *program) Start(s service.Service) error {
+	go p.run()
+	return nil
+}
+
+func (p *program) run() {
+	log.Info("minio Started")
+
+	minio.Main()
+}
+
+func (p *program) Stop(s service.Service) error {
+	return nil
+}
 
 func main() {
-	minio.Main()
+	svcConfig := &service.Config{
+		Name:        "minio",
+		DisplayName: "minio Service",
+		Description: "minio S3 Compatible Service",
+	}
+
+	prg := &program{}
+	s, err := service.New(prg, svcConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logger, err := s.Logger(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = s.Run()
+	if err != nil {
+		logger.Error(err)
+	}
 }
